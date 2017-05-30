@@ -25,7 +25,7 @@ yarn init
 
 The diagram below shows the end goal for the build process we are going to create.
 
-[[assets/buildProcess.jpg|alt=Final Build Process]]
+![Final Build Process](assets/buildProcess.jpg)
 
 ## Setting Up The TypeScript Build ##
 
