@@ -244,4 +244,32 @@ To tell Babel to use the ES2015 and React presets, add a new file called `.babel
 }
 ```
 
-WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loader in reverse order. Replacing `loader: 'ts-loader'` with `loader: [`babel-loader`, 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler.
+WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loader in reverse order. Replacing `loader: 'ts-loader'` with `loader: ['babel-loader', 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler. After re-running the build the new `main.js` will be back to old style JavaScript.
+
+Having set up Babel for the second step in TypeScript build, also want to configure StandardJS and Babel for compiling JavaScript files. First, add the dependencies:
+
+```bash
+yarn add standard standard-loader -D
+```
+
+Then add the following 2 rules section of the `webpack.config.js`:
+
+```js
+      {
+        test: /\.js$/,
+        enforce: 'pre',
+        loader: 'standard-loader',
+        options: {
+          typeCheck: true,
+          emitErrors: true
+        }
+      },
+      {
+        test: /\.jsx?$/,
+        loader: 'babel-loader'
+      }
+```
+
+## Setting Up Electron ##
+
+So far the process above doesn't have any settings to deal with Electron. 
