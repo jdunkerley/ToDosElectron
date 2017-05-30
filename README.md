@@ -121,7 +121,7 @@ const commonConfig = {
       },
       {
         test: /\.tsx?$/,
-        loader: ['ts-loader']
+        loader: 'ts-loader'
       }
     ]
   },
@@ -189,6 +189,9 @@ export class SimpleClass {
   }
 }
 
+const simpleClass: SimpleClass = new SimpleClass()
+console.log(simpleClass.Add(2, 3))
+
 ```
 
 There are three ways to run the build (and all will do the same):
@@ -209,8 +212,36 @@ main.js  2.91 kB       0  [emitted]  main
    [0] ./src/main.ts 73 bytes {0} [built]
 ```
 
-The `dist` folder should be created and a `main.js` file should exist looking like:
+The `dist` folder should be created and a `main.js` file should exist. To test this, run `node dist/main.js` in the root folder. The output should be 5.
+
+## Setting Up Babel ##
+
+Looking at the `main.js` file, the output is ES2015 styled (this will be surrouned by a fair amount of WebPack boilerplate):
 
 ```js
+class SimpleClass {
+    Add(a, b) {
+        return a + b;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["SimpleClass"] = SimpleClass;
+
+const simpleClass = new SimpleClass();
+console.log(simpleClass.Add(2, 3));
 ```
 
+The next step is set up babel-js to convert from this to the older versions. First, add the packages:
+
+```bash
+yarn add babel-core babel-loader babel-preset-es2015 babel-preset-react -D
+```
+
+To tell Babel to use the ES2015 and React presets, add a new file called `.babelrc` with the following content:
+
+```js
+{
+  "presets": ["es2015", "react"]
+}
+```
+
+WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loader in reverse order. Replacing `loader: 'ts-loader'` with `loader: [`babel-loader`, 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler.
