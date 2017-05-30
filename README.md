@@ -1,8 +1,9 @@
 # ReadMe #
 
-Having spent a few days experimenting with setting up a build process for creating an Electron-based thought I would put together a post describing the setup. First, a disclaimer that this is still a work in progress and as with everything within the JavaScript world it seems like there are a thousand ways to do it and this is just one way. 
+Having spent a few days experimenting with setting up a build process for creating an Electron-based thought I would put together a post describing the setup. First, a disclaimer that this is still a work in progress and as with everything within the JavaScript world it seems like there are a thousand ways to do it and this is just one way. Secondly, I am by no means an expert and this is just the process I wanted to create - I am sure there are improvements that can be made and would value suggestions!
 
-My requirements:
+So my requirements are:
+
 * Want to use [Electron](https://electron.atom.io/) for creating a simple (or not…) desktop application
 * Want to use [TypeScript](http://www.typescriptlang.org/) for the majority of the code
 * Where I have to use JavaScript code, want to have it linted by [standardjs](https://standardjs.com/)
@@ -11,21 +12,23 @@ My requirements:
 * Want the output code to ES5, so will use [babel](https://babeljs.io/) to transpile from ES6 to ES5
 * Want to [React](https://facebook.github.io/react/) and [Redux](http://redux.js.org/) on the front end
 * Want to use the [Jest](https://facebook.github.io/jest/) unit testing framework
+* **Want to have one place to control how TypeScript is linted and built, one place to control how JavaScript / JSX is linted and build and one place to run all the tests!**
 
 Additional development environment goals:
+
 * Want to have a CI build process hosted within [Visual Studio Team Services](https://www.visualstudio.com/team-services/)
 * Want to have the code hosted within GitHub
 * Be able to run the build and tests within [Visual Studio Code](https://code.visualstudio.com/)
 
-In this guide, I am using [yarn](https://yarnpkg.com/en/) but the same process should work with npm as well. Let's start by creating an empty project by running:
+The diagram below shows the end goal for the build process we are going to create.
+
+![Final Build Process](assets/buildprocess.jpg?raw=true)
+
+In this guide, I am using [yarn](https://yarnpkg.com/en/) but the same process will work with `npm` as well. Let's start by creating an empty project by running and completing the wizard:
 
 ```js
 yarn init
 ```
-
-The diagram below shows the end goal for the build process we are going to create.
-
-![Final Build Process](assets/buildprocess.jpg?raw=true)
 
 ## Setting Up The TypeScript Build ##
 
@@ -144,11 +147,11 @@ Now we need to configure the build command within `packages.json`. Add the follo
 
 ### Visual Studio Code Set Up ###
 
-In order to run this build from within Visual Studio we need to configure the task and also set up the workspace environment appropriately. 
+In order to run this build from within Visual Studio Code, the next step is to configure the task and also set up the workspace environment appropriately.
 
-[[assets/vsCodeNotification.jpg|alt=Visual Studio Build Notifications]]
+![Visual Studio Build Notifications](assets/vsCodeNotification.jpg?raw=true)
 
-Press `Ctrl-Shift-B` and then click `Configure Build Task`. Choose `npm` as a starting point. Replave the `tasks` array with:
+Press `Ctrl-Shift-B` and then click `Configure Build Task`. Choose `npm` as a starting point, and then replace the default `tasks` array with:
 
 ```js
     "tasks": [
@@ -160,16 +163,54 @@ Press `Ctrl-Shift-B` and then click `Configure Build Task`. Choose `npm` as a st
     ]
 ```
 
-You can also change the command from `npm` to `yarn` if you prefer. At this point, you should be able to build the project by pressing `Ctrl-Shift-B` but as there is no code yet it will just result in an error:
+If using `yarn`, then change the command from `npm` to `yarn`.
 
-[[assets/webPackError.png|alt=WebPack Build Output]]
-
-The last part of setting up the editor is to add a `settings.json` within the `.vscode` folder (which should have been created for the `tasks.json` file) specifying number of spaces and line endings to match the settings:
+The last part of setting up the editor is to add a `settings.json` within the `.vscode` folder (which should have been created for the `tasks.json` file) specifying number of spaces and line endings to match the linting settings:
 
 ```js
 {
     "editor.tabSize": 2,
     "files.eol": "\n"
 }
+```
+
+Following a restart of Visual Studio Code, you should be able to build the project by pressing `Ctrl-Shift-B` but as there is no code yet it will just result in an error:
+
+![WebPack Build Output](assets/webPackError.png?raw=true)
+
+### Testing the build ###
+
+To test the build set up, create a `src` directory and add a `main.ts` file, with the following content (note the empty line at the end):
+
+```js
+export class SimpleClass {
+  Add(a: number, b: number): number {
+    return a + b
+  }
+}
+
+```
+
+There are three ways to run the build (and all will do the same):
+
+* From within the root directory of the project, run `yarn run build` (or `npm run build`)
+* From within the root directory of the project, run `.\node_modules\.bin\webpack`
+* Press `Ctrl-Alt-B` within Visual Studio Code
+
+If all is working you should get output like:
+
+```bash
+ts-loader: Using typescript@2.3.3 and D:\Repos\ToDosElectron\tsconfig.json
+Hash: c35650ba72c226225609
+Version: webpack 2.6.1
+Time: 3554ms
+  Asset     Size  Chunks             Chunk Names
+main.js  2.91 kB       0  [emitted]  main
+   [0] ./src/main.ts 73 bytes {0} [built]
+```
+
+The `dist` folder should be created and a `main.js` file should exist looking like:
+
+```js
 ```
 
