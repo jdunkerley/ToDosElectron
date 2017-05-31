@@ -10,9 +10,9 @@ So my requirements are:
 * Want the TypeScript code to be linted by [ts-lint](https://palantir.github.io/tslint/) but conforming to consistent rules with standardjs
 * Want to use [WebPack](https://webpack.js.org/) (version 2) to control the build process
 * Want the output code to ES5, so will use [babel](https://babeljs.io/) to transpile from ES6 to ES5
-* Want to [React](https://facebook.github.io/react/) and [Redux](http://redux.js.org/) on the front end
+* Want to [React](https://facebook.github.io/react/) and `tsx` on the front end
 * Want to use the [Jest](https://facebook.github.io/jest/) unit testing framework
-* **Want to have one place to control how TypeScript is linted and built, one place to control how JavaScript / JSX is linted and build and one place to run all the tests!**
+* **Want to have one place to control how TypeScript / TSX is linted and built, one place to control how JavaScript / JSX is linted and build and one place to run all the tests!**
 
 Additional development environment goals:
 
@@ -332,12 +332,51 @@ WebPack also defaults to substituting the `__dirname` which is useful within Ele
   },
 ```
 
+Now to put together the `main.ts` script to create the Electron app and `BrowserWindow`:
 
-- New main.ts and gui.ts
+```js
+import { app, BrowserWindow } from 'electron'
+declare var __dirname: string
+let mainWindow: Electron.BrowserWindow
 
-## Adding React and Redux ##
+function onReady() {
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600
+  })
 
-- Adding React and Redux and Types
+  const fileName = `file://${__dirname}/index.html`
+  mainWindow.loadURL(fileName)
+  mainWindow.on('close', () => app.quit())
+}
+
+app.on('ready', () => onReady())
+app.on('window-all-closed', () => app.quit())
+console.log(`Electron Version ${app.getVersion()}`)
+
+```
+
+For the UI side, a simple `gui.ts` writing the node version out to the document:
+
+```js
+document.getElementsByTagName('body')[0].innerHTML = `node Version: ${process.versions.node}`
+
+```
+
+The last adjustment is to add a new task the `packages.json` file. The `prestart` entry makes it build it as well.
+
+```js
+    "prestart": "yarn run build",
+    "start": "electron ./dist/main.js",
+```
+
+If you run `yarn run start` hopefully an electron window will appear with the node version displayed in it:
+
+![Electron App](assets/electronApp.jpg)
+
+## Adding React ##
+
+- Adding React and Types
 - Initial TSX page...
 
 ## Unit Tests ##

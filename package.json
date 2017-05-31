@@ -4,6 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "prestart": "yarn run build",
+    "start": "electron ./dist/main.js",
     "build": "webpack --config webpack.config.js"
   },
   "devDependencies": {

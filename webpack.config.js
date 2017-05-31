@@ -35,13 +35,27 @@ const commonConfig = {
       }
     ]
   },
+  node: {
+    __dirname: false
+  }, 
   resolve: {
     extensions: ['.js', '.ts', '.tsx', '.jsx', '.json']
   }
 }
 
-module.exports = Object.assign(
-  {
-    entry: { main: './src/main.ts' }
-  },
-  commonConfig)
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+module.exports = [
+  Object.assign(
+    {
+      target: 'electron-main',
+      entry: { main: './src/main.ts' }
+    },
+    commonConfig),
+  Object.assign(
+    {
+      target: 'electron-renderer',
+      entry: { gui: './src/gui.ts' },
+      plugins: [new HtmlWebpackPlugin()]
+    },
+    commonConfig)
+]
