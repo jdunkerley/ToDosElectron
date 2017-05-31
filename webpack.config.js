@@ -54,7 +54,7 @@ module.exports = [
   Object.assign(
     {
       target: 'electron-renderer',
-      entry: { gui: './src/gui.ts' },
+      entry: { gui: './src/gui.tsx' },
       plugins: [new HtmlWebpackPlugin()]
     },
     commonConfig)

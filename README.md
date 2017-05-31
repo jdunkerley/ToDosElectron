@@ -24,6 +24,8 @@ The diagram below shows the end goal for the build process we are going to creat
 
 ![Final Build Process](assets/buildprocess.jpg?raw=true)
 
+This guide is probably a bit too long, so if you prefer you can just download the initial project from [github](https://github.com/jdunkerley/ToDosElectron).
+
 ## Importing the packages... ##
 
 In this guide, I am using [yarn](https://yarnpkg.com/en/) but the same process will work with `npm` as well. Let's start by creating an empty project by running and completing the wizard:
@@ -376,20 +378,85 @@ If you run `yarn run start` hopefully an electron window will appear with the no
 
 ## Adding React ##
 
-- Adding React and Types
-- Initial TSX page...
+In order to move to using TSX (or JSX), need to add React packages to the project:
+
+```js
+yarn add react react-dom
+yarn add @types/react @types/react-dom -D
+```
+
+The entry point for the UI part of the application needs to be switched from `gui.ts` to `gui.tsx`. First, change the `entry: { gui: './src/gui.ts' },` line in the webpack.config file to `entry: { gui: './src/gui.tsx' },` and rename the file to `gui.tsx`. Replace the content in `gui.tsx` with:
+
+```js
+import React from 'react'
+import ReactDOM from 'react-dom'
+
+ReactDOM.render(
+  <div>Node version: {process.versions.node}</div>,
+  document.getElementsByTagName('body')[0])
+
+```
+
+Rerunning `yarn run start` will produce the same result as before but now we have an Electron based application written in TypeScript using React and build with WebPack!
 
 ## Unit Tests ##
 
-- Jest 
-- Directory search
-- Watch mode implications...
+The next piece to set up is an unit testing solution. Sticking with the rule that webpack should build all the TypeScript, the idea is that the tests are written in TypeScript compiled from tests directory into another directory where Jest then runs the JavaScript output.
+
+Again first step is to add the additional packages:
+
+```js
+yarn add jest jest-junit @types/jest -D
+```
+
+WebPack needs another configuration file to run the tests. In general the settings should be the same between the two. By requiring the main webpack.config file, this test config file can use it as a starting point. Create a new config file called `webpack.tests.config.js` and add the following content:
+
+```js
+const webPack = require('./webpack.config')
+const fs = require('fs')
+const path = require('path')
+
+const readDirRecursiveSync = (folder, filter) => {
+  const currentPath = fs.readdirSync(folder).map(f => path.join(folder, f))
+  const files = currentPath.filter(filter)
+
+  const directories = currentPath
+    .filter(f => fs.statSync(f).isDirectory())
+    .map(f => readDirRecursiveSync(f, filter))
+    .reduce((cur, next) => [...cur, ...next], [])
+
+  return [...files, ...directories]
+}
+
+const getEntries = (folder) =>
+  readDirRecursiveSync(folder, f => f.match(/.*(tests|specs)\.tsx?$/))
+    .map((file) => {
+      return {
+        name: path.basename(file, path.extname(file)),
+        path: path.resolve(file)
+      }
+    })
+    .reduce((memo, file) => {
+      memo[file.name] = file.path
+      return memo
+    }, {})
+
+module.exports = [
+  Object.assign({}, webPack[0], {entry: getEntries('./tests/host/')}),
+  Object.assign({}, webPack[0], {entry: getEntries('./tests/gui/')})
+].map(s => {
+  s.output.path = path.resolve(__dirname, '__tests__')
+  return s
+})
+
+```
+
+The `getEntries` function is designed to search all folders within `tests/host` and `tests/gui` for TypeScript files with filenames ending either with `tests` or `specs`. This scan process limits the watch functionality of WebPack as it will only scan for files at start up. Files within `tests/host` will be build with the target setting of `electron-main` and `tests/gui` will be `electron-renderer`. The output will built to an `__tests__` folder and as before will pass through tslint, tsc and babel to produce JavaScript files.
 
 ## Visual Studio Team Services ##
 
 - Setting up a build within VSTS
-- Jest-Junit
 
 ## Future Improvemnts ##
 
-Currently, I don't have a good solution for watching tests. 
+Currently, I don't have a good solution for watching tests. While watch mode works fine for `build` the `test` command doesn't detect 
