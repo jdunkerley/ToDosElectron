@@ -24,21 +24,31 @@ The diagram below shows the end goal for the build process we are going to creat
 
 ![Final Build Process](assets/buildprocess.jpg?raw=true)
 
+## Importing the packages... ##
+
 In this guide, I am using [yarn](https://yarnpkg.com/en/) but the same process will work with `npm` as well. Let's start by creating an empty project by running and completing the wizard:
 
 ```js
 yarn init
 ```
 
-## Setting Up The TypeScript Build ##
+Next, import all the packages we need for the build as development dependencies:
 
-In order to set this up, we need to set up a fair few pieces. Let's start by getting the TypeScript process set up to build a file from the `src` directory to the `dist` folder.
+*For compiling and linting TypeScript (WebPack, TSLint, TypeScript)*
 
 ```js
 yarn add webpack tslint-config-standard tslint-loader ts-loader tslint typescript -D
 ```
 
-This will add webpack, tslint and typescript into the project as development dependencies. The next step is to configure the TypeScript compiler and tslint linter. Add a new file called `tsconfig.json` to the root folder of the project with the following content:
+*For transpiling and linting ES2015 code (Babel, Babel Presets, StandardJS)*
+
+```js
+yarn add babel-core babel-loader babel-preset-es2015 babel-preset-react standard standard-loader -D
+```
+
+## Setting Up The TypeScript Build ##
+
+In order to set this up, we need to set up a fair few pieces. Let's start by getting the TypeScript process set up to build a file from the `src` directory to the `dist` folder. To configure the TypeScript compile, add a new file called `tsconfig.json` to the root folder of the project with the following content:
 
 ```js
 {
@@ -79,7 +89,7 @@ This tells the TypeScript compiler not to compile on save (as we are going to us
 |allowJs|true|Allow JavaScript files to be compiled|
 |jsx|preserve|Preserve means we produce a jsx file leaving the JSX mark up unchanged|
 
-Next  set up tslint to be consistent with StandardJS. Add another new file to the root directory called `tslint.json` with the following content:
+In order to set up tslint to be consistent with StandardJS, add another new file to the root directory called `tslint.json` with the following content:
 
 ```js
 {
@@ -96,9 +106,9 @@ Next  set up tslint to be consistent with StandardJS. Add another new file to th
 }
 ```
 
-This makes tslint follow the same configuration as StandardJS. I found the space indentation was causing me some errors hence needing to add the additional configuration over `tslint-config-standard`.
+This makes tslint follow the same configuration as StandardJS. I found the whitespace settings were causing me some errors hence needing to add the additional configuration over `tslint-config-standard`.
 
-Next, configure Webpack to compile TypeScript files (`ts` or `tsx` extensions) found in the `src` folder and output to the `dist` folder. The structure I use here is a little different from the standard as we will need two parallel configurations when we come to the Electron set up. Create a file called `webpack.config.js` and add the following:
+Next configure WebPack to compile TypeScript files (`ts` or `tsx` extensions) found in the `src` folder and output to the `dist` folder. The structure I use here is a little different from the standard as we will need two parallel configurations when we come to the Electron set up. Create a file called `webpack.config.js` and add the following:
 
 ```js
 const path = require('path')
@@ -137,7 +147,9 @@ module.exports = Object.assign(
   commonConfig)
 ```
 
-Now we need to configure the build command within `packages.json`. Add the following block, assuming you don't have `scripts` section already (merge into it if you do):
+The first rule tells WebPack to run tslint at the prebuild step, before then moving on run the TypeScript compiler. The resolve option adds the TypeScript extensions into WebPack so it will look for both JavaScript and TypeScript files (including JSX or TSX files).
+
+To add the build command to yarn or npm, add the following code to the `packages.json`. This is assuming you don't have `scripts` section already, if you do merge it in.
 
 ```js
   "scripts": {
@@ -174,11 +186,19 @@ The last part of setting up the editor is to add a `settings.json` within the `.
 }
 ```
 
-Following a restart of Visual Studio Code, you should be able to build the project by pressing `Ctrl-Shift-B` but as there is no code yet it will just result in an error:
-
-![WebPack Build Output](assets/webPackError.png?raw=true)
+**A restart of Visual Studio Code might be required in order for it to pick up these changes.**
 
 ### Testing the build ###
+
+There are three ways to run the build (and all will do the same):
+
+* From within the root directory of the project, run `yarn run build` (or `npm run build`)
+* From within the root directory of the project, run `.\node_modules\.bin\webpack`
+* Press `Ctrl-Alt-B` within Visual Studio Code
+
+As there is no code yet, running the build will just result in an error:
+
+![WebPack Build Output](assets/webPackError.png?raw=true)
 
 To test the build set up, create a `src` directory and add a `main.ts` file, with the following content (note the empty line at the end):
 
@@ -194,11 +214,6 @@ console.log(simpleClass.Add(2, 3))
 
 ```
 
-There are three ways to run the build (and all will do the same):
-
-* From within the root directory of the project, run `yarn run build` (or `npm run build`)
-* From within the root directory of the project, run `.\node_modules\.bin\webpack`
-* Press `Ctrl-Alt-B` within Visual Studio Code
 
 If all is working you should get output like:
 
@@ -230,13 +245,7 @@ const simpleClass = new SimpleClass();
 console.log(simpleClass.Add(2, 3));
 ```
 
-The next step is set up babel-js to convert from this to the older versions. First, add the packages:
-
-```bash
-yarn add babel-core babel-loader babel-preset-es2015 babel-preset-react -D
-```
-
-To tell Babel to use the ES2015 and React presets, add a new file called `.babelrc` with the following content:
+The next goal is to use babel-js to convert from this to the older versions. As of Babel 6, a `.babelrc` file is used to tell it what 'presets' to load. The following will tell it to understand both ES2015 and React:
 
 ```js
 {
@@ -244,15 +253,23 @@ To tell Babel to use the ES2015 and React presets, add a new file called `.babel
 }
 ```
 
-WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loader in reverse order. Replacing `loader: 'ts-loader'` with `loader: ['babel-loader', 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler. After re-running the build the new `main.js` will be back to old style JavaScript.
+WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loader in reverse order. Replacing `loader: 'ts-loader'` with `loader: ['babel-loader', 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler.
 
-Having set up Babel for the second step in TypeScript build, also want to configure StandardJS and Babel for compiling JavaScript files. First, add the dependencies:
+After re-running the build the new `main.js` will be back to old style JavaScript:
 
-```bash
-yarn add standard standard-loader -D
+```js
+var SimpleClass = exports.SimpleClass = function () {
+    function SimpleClass() {
+        _classCallCheck(this, SimpleClass);
+    }
+
+    _createClass(SimpleClass, [{
+        key: "Add",
+        value: function Add(a, b) {
+...
 ```
 
-Then add the following 2 rules section of the `webpack.config.js`:
+Having set up Babel for the second step in TypeScript build, need to also configure it for compiling JavaScript files. Additionally, StandardJS should be used as a linter for JavaScript files. To do this add the following 2 rules section of the `webpack.config.js`:
 
 ```js
       {
@@ -270,6 +287,6 @@ Then add the following 2 rules section of the `webpack.config.js`:
       }
 ```
 
-## Setting Up Electron ##
+## Electron ##
 
-So far the process above doesn't have any settings to deal with Electron. 
+So far the process above doesn't have any settings to deal with Electron.
