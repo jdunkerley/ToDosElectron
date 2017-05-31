@@ -46,7 +46,7 @@ yarn add webpack tslint-config-standard tslint-loader ts-loader tslint typescrip
 yarn add babel-core babel-loader babel-preset-es2015 babel-preset-react standard standard-loader -D
 ```
 
-## Setting Up The TypeScript Build ##
+## Setting Up The Build Process ##
 
 In order to set this up, we need to set up a fair few pieces. Let's start by getting the TypeScript process set up to build a file from the `src` directory to the `dist` folder. To configure the TypeScript compile, add a new file called `tsconfig.json` to the root folder of the project with the following content:
 
@@ -214,7 +214,6 @@ console.log(simpleClass.Add(2, 3))
 
 ```
 
-
 If all is working you should get output like:
 
 ```bash
@@ -289,4 +288,69 @@ Having set up Babel for the second step in TypeScript build, need to also config
 
 ## Electron ##
 
-So far the process above doesn't have any settings to deal with Electron.
+So far the process above doesn't have any settings to deal with Electron. Electron adds a few additional complications we need to deal with. The following command will add the core Electron package and the type definitions for Electron and Node. It also add the HTML WebPack plugin which I will use to generate a place holder `index.html` for the UI side of Electron.
+
+```js
+yarn add electron html-webpack-plugin @types/electron @types/node -D
+```
+
+An Electron application consists of two processes:
+
+* **Main**: This is a NodeJS based script which serves as the entry point into the application. It is responsible for instantiating the `BrowserWindows` instances and also manages various applicaiton life cycle events
+* **Renderer**: This is a Chromium based browser. It is the User Interface part of the application. It has the same kind of structure you would expect if you use Chrome. One master process and each `WebView` is it's own process.
+
+The two process share some APIs and communicate between each other over uning interprocess communication. There is a great amount of detail on this [Electron's process post](https://medium.com/@ccnokes/deep-dive-into-electrons-main-and-renderer-processes-7a9599d5c9e2).
+
+As we have two process we are wanting to build output for we need to adjust the `webpack.config.js` file to handle this. For the two processes there are two different [`target`](https://webpack.js.org/configuration/target/) settings needed - `electron-main` and `electron-renderer`. If the configuration file exports an array then WebPack will interrupt each of the objects as parallel build processes. Replace the `module.exports` section of the configuration with:
+
+```js
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+module.exports = [
+  Object.assign(
+    {
+      target: 'electron-main',
+      entry: { main: './src/main.ts' }
+    },
+    commonConfig),
+  Object.assign(
+    {
+      target: 'electron-renderer',
+      entry: { gui: './src/gui.ts' },
+      plugins: [new HtmlWebpackPlugin()]
+    },
+    commonConfig)
+]
+```
+
+This will pick up the `main.ts` file and compile this as the Electron main process. It also will compile a `gui.ts` to be the Electron renderer process. The `HtmlWebpackPlugin` will create an `index.html` automatically that includes a reference to the compiled `gui.js`.
+
+WebPack also defaults to substituting the `__dirname` which is useful within Electron. This can be stopped by adding a setting to the `commonConfig` object:
+
+```js
+  node: {
+    __dirname: false
+  },
+```
+
+
+- New main.ts and gui.ts
+
+## Adding React and Redux ##
+
+- Adding React and Redux and Types
+- Initial TSX page...
+
+## Unit Tests ##
+
+- Jest 
+- Directory search
+- Watch mode implications...
+
+## Visual Studio Team Services ##
+
+- Setting up a build within VSTS
+- Jest-Junit
+
+## Future Improvemnts ##
+
+Currently, I don't have a good solution for watching tests. 

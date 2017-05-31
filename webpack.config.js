@@ -17,6 +17,19 @@ const commonConfig = {
         }
       },
       {
+        test: /\.js$/,
+        enforce: 'pre',
+        loader: 'standard-loader',
+        options: {
+          typeCheck: true,
+          emitErrors: true
+        }
+      },
+      {
+        test: /\.jsx?$/,
+        loader: 'babel-loader'
+      },
+      {
         test: /\.tsx?$/,
         loader: ['babel-loader', 'ts-loader']
       }
