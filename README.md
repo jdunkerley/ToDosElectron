@@ -500,6 +500,12 @@ describe('GUI', () => {
 
 ```
 
+Running `yarn run test` will build these two tests files and then run Jest on the resulting output:
+
+![Test Results](assets/testResults.jpg)
+
+It will also create a `TEST-jest_junit.xml` file. This is for reading with Visual Studio Team Services so we get nice test results.
+
 ## Visual Studio Team Services ##
 
 - Setting up a build within VSTS
