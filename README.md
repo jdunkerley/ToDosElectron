@@ -24,7 +24,7 @@ The diagram below shows the end goal for the build process we are going to creat
 
 ![Final Build Process](assets/buildprocess.jpg?raw=true)
 
-This guide is probably a bit too long, so if you prefer you can just download the initial project from [github](https://github.com/jdunkerley/ToDosElectron).
+This guide is probably a bit too long (feels like my longest post in a while!), so if you prefer you can just download the initial project from [github](https://github.com/jdunkerley/ToDosElectron).
 
 ## Importing the packages... ##
 
@@ -453,10 +453,61 @@ module.exports = [
 
 The `getEntries` function is designed to search all folders within `tests/host` and `tests/gui` for TypeScript files with filenames ending either with `tests` or `specs`. This scan process limits the watch functionality of WebPack as it will only scan for files at start up. Files within `tests/host` will be build with the target setting of `electron-main` and `tests/gui` will be `electron-renderer`. The output will built to an `__tests__` folder and as before will pass through tslint, tsc and babel to produce JavaScript files.
 
+To add the `test` command to `yarn`, add the following to `packages.json`. The `pretest` stage will build all the test files before running jest on the result.
+
+```js
+    "pretest": "webpack --config webpack.tests.config.js",
+    "test": "jest"
+```
+
+By default, Jest will search for the test files within the `__tests__` folder or any JavaScript file with a filename ending either spec or test. Adding the configuration below (to `package.json`) limits Jests to just reading the `__tests__` folder. The second part configures jest-junit to write out an XML file containing the test results - this is for Visual Studio Team Services to be able to read the results.
+
+```js
+  "jest": {
+    "testRegex": "/__tests__/.*\\.jsx?",
+    "testResultsProcessor": "./node_modules/jest-junit"
+  },
+  "jest-junit": {
+    "suiteName": "jest tests",
+    "output": "./TEST-jest_junit.xml",
+    "classNameTemplate": "{classname}-{title}",
+    "titleTemplate": "{classname}-{title}",
+    "usePathForSuiteName": "true"
+  }
+```
+
+Finally, create the test directory structure and a couple of place holder tests. Note the top line in the sample code below, this adds the global variables that Jest declares into TypeScript so the compiler will be happy!
+
+*tests/host/host_tests.ts*
+```js
+/// <reference types="jest" />
+describe('Host', () => {
+  test('PlaceHolderPassingTest', () => {
+    expect(1 + 2).toBe(3)
+  })
+})
+
+```
+
+*tests/gui/gui_tests.ts*
+```js
+/// <reference types="jest" />
+describe('GUI', () => {
+  test('PlaceHolderFailingTest', () => {
+    expect(1 + 2).toBe(4)
+  })
+})
+
+```
+
 ## Visual Studio Team Services ##
 
 - Setting up a build within VSTS
 
 ## Future Improvemnts ##
 
-Currently, I don't have a good solution for watching tests. While watch mode works fine for `build` the `test` command doesn't detect 
+Currently, I don't have a good solution for watching tests. While watch mode works fine for `build` the `test` command set up doesn't support watching yet. I'll inevitably spend a fair chunk of time mucking around trying to get this bit set up as well but at present I accept just having to run the command!
+
+Primarily to keep this post a little shorter I haven't gone into much on writing the Electron or React side just looking at the build process.
+
+Hopefully as I experiment and learn more, I will write a few more posts on Electron as it is a platform I am growing to really like.

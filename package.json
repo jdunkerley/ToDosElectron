@@ -6,7 +6,9 @@
   "scripts": {
     "prestart": "yarn run build",
     "start": "electron ./dist/main.js",
-    "build": "webpack --config webpack.config.js"
+    "build": "webpack --config webpack.config.js",
+    "pretest": "webpack --config webpack.tests.config.js",
+    "test": "jest"
   },
   "devDependencies": {
     "@types/electron": "^1.4.38",
@@ -34,5 +36,16 @@
   "dependencies": {
     "react": "^15.5.4",
     "react-dom": "^15.5.4"
+  },
+  "jest": {
+    "testRegex": "/__tests__/.*\\.jsx?",
+    "testResultsProcessor": "./node_modules/jest-junit"
+  },
+  "jest-junit": {
+    "suiteName": "jest tests",
+    "output": "./TEST-jest_junit.xml",
+    "classNameTemplate": "{classname}-{title}",
+    "titleTemplate": "{classname}-{title}",
+    "usePathForSuiteName": "true"
   }
 }
