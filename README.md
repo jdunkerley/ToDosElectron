@@ -17,7 +17,7 @@ So my requirements are:
 Additional development environment goals:
 
 * Want to have a CI build process hosted within [Visual Studio Team Services](https://www.visualstudio.com/team-services/)
-* Want to have the code hosted within GitHub
+* Want to have the code hosted on GitHub
 * Be able to run the build and tests within [Visual Studio Code](https://code.visualstudio.com/)
 
 The diagram below shows the end goal for the build process we are going to create.
@@ -110,7 +110,7 @@ In order to set up tslint to be consistent with StandardJS, add another new file
 
 This makes tslint follow the same configuration as StandardJS. I found the whitespace settings were causing me some errors hence needing to add the additional configuration over `tslint-config-standard`.
 
-Next configure WebPack to compile TypeScript files (`ts` or `tsx` extensions) found in the `src` folder and output to the `dist` folder. The structure I use here is a little different from the standard as we will need two parallel configurations when we come to the Electron set up. Create a file called `webpack.config.js` and add the following:
+Next, configure WebPack to compile TypeScript files (`ts` or `tsx` extensions) found in the `src` folder and output to the `dist` folder. The structure I use here is a little different from the standard as we will need two parallel configurations when we come to the Electron set up. Create a file called `webpack.config.js` and add the following:
 
 ```js
 const path = require('path')
@@ -151,7 +151,7 @@ module.exports = Object.assign(
 
 The first rule tells WebPack to run tslint at the prebuild step, before then moving on run the TypeScript compiler. The resolve option adds the TypeScript extensions into WebPack so it will look for both JavaScript and TypeScript files (including JSX or TSX files).
 
-To add the build command to yarn or npm, add the following code to the `packages.json`. This is assuming you don't have `scripts` section already, if you do merge it in.
+To add the build command to yarn or npm, add the following code to the `packages.json`. This is assuming you don't have `scripts` section already if you do merge it in.
 
 ```js
   "scripts": {
@@ -179,7 +179,7 @@ Press `Ctrl-Shift-B` and then click `Configure Build Task`. Choose `npm` as a st
 
 If using `yarn`, then change the command from `npm` to `yarn`.
 
-The last part of setting up the editor is to add a `settings.json` within the `.vscode` folder (which should have been created for the `tasks.json` file) specifying number of spaces and line endings to match the linting settings:
+The last part of setting up the editor is to add a `settings.json` within the `.vscode` folder (which should have been created for the `tasks.json` file) specifying the number of spaces and line endings to match the linting settings:
 
 ```js
 {
@@ -232,7 +232,7 @@ The `dist` folder should be created and a `main.js` file should exist. To test t
 
 ## Setting Up Babel ##
 
-Looking at the `main.js` file, the output is ES2015 styled (this will be surrouned by a fair amount of WebPack boilerplate):
+Looking at the `main.js` file, the output is ES2015 style (this will be surrounded by a fair amount of WebPack boilerplate):
 
 ```js
 class SimpleClass {
@@ -254,7 +254,7 @@ The next goal is to use babel-js to convert from this to fully compatible JavaSc
 }
 ```
 
-WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loader in reverse order. Replacing `loader: 'ts-loader'` with `loader: ['babel-loader', 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler.
+WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loaded in reverse order. Replacing `loader: 'ts-loader'` with `loader: ['babel-loader', 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler.
 
 After re-running the build the new `main.js` will be very similar to the last version, but should allow for all ES2015 features:
 
@@ -292,7 +292,7 @@ If you also want to target browsers you could switch from `es2015-node` preset t
 
 ## Electron ##
 
-So far the process above doesn't have any settings to deal with Electron. Electron adds a few additional complications we need to deal with. The following command will add the core Electron package and the type definitions for Electron and Node. It also add the HTML WebPack plugin which I will use to generate a place holder `index.html` for the UI side of Electron.
+So far the process above doesn't have any settings to deal with Electron. Electron adds a few additional complications we need to deal with. The following command will add the core Electron package and the type definitions for Electron and Node. It also adds the HTML WebPack plugin which I will use to generate a placeholder `index.html` for the UI side of Electron.
 
 ```js
 yarn add electron html-webpack-plugin @types/electron @types/node -D
@@ -300,12 +300,12 @@ yarn add electron html-webpack-plugin @types/electron @types/node -D
 
 An Electron application consists of two processes:
 
-* **Main**: This is a NodeJS based script which serves as the entry point into the application. It is responsible for instantiating the `BrowserWindows` instances and also manages various applicaiton life cycle events
-* **Renderer**: This is a Chromium based browser. It is the User Interface part of the application. It has the same kind of structure you would expect if you use Chrome. One master process and each `WebView` is it's own process.
+* **Main**: This is a NodeJS based script which serves as the entry point into the application. It is responsible for instantiating the `BrowserWindows` instances and also manages various application lifecycle events
+* **Renderer**: This is a Chromium based browser. It is the User Interface part of the application. It has the same kind of structure you would expect if you use Chrome. One master process and each `WebView` is its own process.
 
-The two process share some APIs and communicate between each other over uning interprocess communication. There is a great amount of detail on this [Electron's process post](https://medium.com/@ccnokes/deep-dive-into-electrons-main-and-renderer-processes-7a9599d5c9e2).
+The two process share some APIs and communicate between each other over using interprocess communication. There is a great amount of detail on this [Electron's process post](https://medium.com/@ccnokes/deep-dive-into-electrons-main-and-renderer-processes-7a9599d5c9e2).
 
-As we have two process we are wanting to build output for we need to adjust the `webpack.config.js` file to handle this. For the two processes there are two different [`target`](https://webpack.js.org/configuration/target/) settings needed - `electron-main` and `electron-renderer`. If the configuration file exports an array then WebPack will interrupt each of the objects as parallel build processes. Replace the `module.exports` section of the configuration with:
+As we have two processes we are wanting to build output for we need to adjust the `webpack.config.js` file to handle this. For the two processes, there are two different [`target`](https://webpack.js.org/configuration/target/) settings needed - `electron-main` and `electron-renderer`. If the configuration file exports an array then WebPack will interrupt each of the objects as parallel build processes. Replace the `module.exports` section of the configuration with:
 
 ```js
 const HtmlWebpackPlugin = require('html-webpack-plugin')
@@ -351,11 +351,11 @@ function onReady() {
 
   const fileName = `file://${__dirname}/index.html`
   mainWindow.loadURL(fileName)
-  mainWindow.on('close', () => app.quit())
+  mainWindow.on('close', () =&gt; app.quit())
 }
 
-app.on('ready', () => onReady())
-app.on('window-all-closed', () => app.quit())
+app.on('ready', () =&gt; onReady())
+app.on('window-all-closed', () =&gt; app.quit())
 console.log(`Electron Version ${app.getVersion()}`)
 
 ```
@@ -399,13 +399,13 @@ ReactDOM.render(
 
 ```
 
-Rerunning `yarn run start` will produce the same result as before but now we have an Electron based application written in TypeScript using React and build with WebPack!
+Rerunning `yarn run start` will produce the same result as before but now we have an Electron-based application written in TypeScript using React and build with WebPack!
 
 ## Unit Tests ##
 
-The next piece to set up is an unit testing solution. Sticking with the rule that webpack should build all the TypeScript, the idea is that the tests are written in TypeScript compiled from tests directory into another directory where Jest then runs the JavaScript output.
+The next piece to set up is a unit testing solution. Sticking with the rule that WebPack should build all the TypeScript, the idea is that the tests are written in TypeScript compiled from tests directory into another directory where Jest then runs the JavaScript output.
 
-Again first step is to add the additional packages:
+Again the first step is to add the additional packages:
 
 ```js
 yarn add jest jest-junit @types/jest -D
@@ -453,7 +453,7 @@ module.exports = [
 
 ```
 
-The `getEntries` function is designed to search all folders within `tests/host` and `tests/gui` for TypeScript files with filenames ending either with `tests` or `specs`. This scan process limits the watch functionality of WebPack as it will only scan for files at start up. Files within `tests/host` will be build with the target setting of `electron-main` and `tests/gui` will be `electron-renderer`. The output will built to an `__tests__` folder and as before will pass through tslint, tsc and babel to produce JavaScript files.
+The `getEntries` function is designed to search all folders within `tests/host` and `tests/gui` for TypeScript files with filenames ending either with `tests` or `specs`. This scan process limits the watch functionality of WebPack as it will only scan for files at start up. Files within `tests/host` will be built with the target setting of `electron-main` and `tests/gui` will be `electron-renderer`. The output will be built to a `__tests__` folder and as before will pass through tslint, tsc and babel to produce JavaScript files.
 
 To add the `test` command to `yarn`, add the following to `packages.json`. The `pretest` stage will build all the test files before running jest on the result.
 
@@ -478,7 +478,7 @@ By default, Jest will search for the test files within the `__tests__` folder or
   }
 ```
 
-Finally, create the test directory structure and a couple of place holder tests. Note the top line in the sample code below, this adds the global variables that Jest declares into TypeScript so the compiler will be happy!
+Finally, create the test directory structure and a couple of placeholder tests. Note the top line in the sample code below, this adds the global variables that Jest declares into TypeScript so the compiler will be happy!
 
 *tests/host/host_tests.ts*
 
@@ -516,11 +516,11 @@ Create a new project in Visual Studio Team Services and select build code from a
 
 ![Build from another repository](assets/vstsBuildFromAnotherRepository.jpg)
 
-Select `New Defintion` and choose either of NodeJS scripts as a starting point. These are based on top of npm so it is easy to configure to build this project. I am sure you could make it use yarn but for simplicity have stuck with npm.
+Select `New Definition` and choose either of NodeJS scripts as a starting point. These are based on top of npm so it is easy to configure to build this project. I am sure you could make it use yarn but for simplicity have stuck with npm.
 
-First, reconfigure the Get Sources step to get the code from GitHub (you may need to allow pop ups for the authorization step). It's great how easy it is to integrate with external repositories now within VSTS.
+First, reconfigure the Get Sources step to get the code from GitHub (you may need to allow pop-ups for the authorization step). It's great how easy it is to integrate with external repositories now within VSTS.
 
-Next remove the Run gulp task. Add a new npm task after the npm install, with npm command of run and argument of test. This will build and run the Jest tests. It needs to continue even if it the tests fail so choose `Continue on error` within the Control Options section.
+Next, remove the Run gulp task. Add a new npm task after the npm install, with npm command of run and argument of test. This will build and run the Jest tests. It needs to continue even if it the tests fail so choose `Continue on error` within the Control Options section.
 
 ![NPM Run Tests Settings](assets/vstsNPMRunTests.jpg)
 
@@ -530,7 +530,7 @@ The last step is to run the actual WebPack build. So add another npm command. Th
 
 ![VSTS Build Process](assets/vstsFinalBuild.jpg)
 
-Finally, switch on the triggers for Continous Integration and Pull Requests. That't is CI from GitHub into VSTS!
+Finally, switch on the triggers for Continous Integration and Pull Requests. That is it - a CI process from GitHub into VSTS!
 
 ![VSTS Build Running](assets/vstsBuildRunning.jpg)
 ![VSTS Build Results](assets/vstsBuildResults.jpg)
@@ -544,10 +544,10 @@ yarn upgrade electron -D
 yarn remove @types/electron @types/node -D
 ``` 
 
-Currently, I don't have a good solution for watching tests. While watch mode works fine for `build` (run `yarn run build -- --watch`) the `test` command set up doesn't support watching yet. I'll inevitably spend a fair chunk of time mucking around trying to get this bit set up as well but at present I accept just having to run the command to run my tests.
+Currently, I don't have a good solution for watching tests. While watch mode works fine for `build` (run `yarn run build -- --watch`) the `test` command set up doesn't support watching yet. I'll inevitably spend a fair chunk of time mucking around trying to get this bit set up as well but at present, I accept just having to run the command to run my tests.
 
 Primarily to keep this post shorter (well a little shorter), I haven't gone into much detail on writing the Electron or React side of an application, instead just looking at the build process.
 
 I haven't covered packaging or any of the other steps needed for Electron. Lots more I can add if people are interested.
 
-Hopefully as I experiment and learn more, I will write a few more posts on Electron as it is a platform I am growing to really like.
+Hopefully, as I experiment and learn more, I will write a few more posts on Electron as it is a platform I am growing to really like.
