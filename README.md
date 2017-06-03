@@ -9,7 +9,7 @@ So my requirements are:
 * Where I have to use JavaScript code, want to have it linted by [standardjs](https://standardjs.com/)
 * Want the TypeScript code to be linted by [ts-lint](https://palantir.github.io/tslint/) but conforming to consistent rules with standardjs
 * Want to use [WebPack](https://webpack.js.org/) (version 2) to control the build process
-* Want the output code to ES5, so will use [babel](https://babeljs.io/) to transpile from ES6 to ES5
+* Want to use [babel](https://babeljs.io/) to transpile from ES6 to ES5 as needed for node, and to compile the JSX
 * Want to [React](https://facebook.github.io/react/) and `tsx` on the front end
 * Want to use the [Jest](https://facebook.github.io/jest/) unit testing framework
 * **Want to have one place to control how TypeScript / TSX is linted and built, one place to control how JavaScript / JSX is linted and build and one place to run all the tests!**
@@ -42,10 +42,10 @@ Next, import all the packages we need for the build as development dependencies:
 yarn add webpack tslint-config-standard tslint-loader ts-loader tslint typescript -D
 ```
 
-*For transpiling and linting ES2015 code (Babel, Babel Presets, StandardJS)*
+*For transpiling and linting ES2015 code for Node (Babel, Babel Presets, StandardJS)*
 
 ```js
-yarn add babel-core babel-loader babel-preset-es2015 babel-preset-react standard standard-loader -D
+yarn add babel-core babel-loader babel-preset-es2015-node babel-preset-react standard standard-loader -D
 ```
 
 ## Setting Up The Build Process ##
@@ -246,27 +246,27 @@ const simpleClass = new SimpleClass();
 console.log(simpleClass.Add(2, 3));
 ```
 
-The next goal is to use babel-js to convert from this to the older versions. As of Babel 6, a `.babelrc` file is used to tell it what 'presets' to load. The following will tell it to understand both ES2015 and React:
+The next goal is to use babel-js to convert from this to fully compatible JavaScript for Node. As of Babel 6, a `.babelrc` file is used to tell it what 'presets' to load. The following will tell it to understand both ES2015 and React, and to transpile down as needed for Node:
 
 ```js
 {
-  "presets": ["es2015", "react"]
+  "presets": ["es2015-node", "react"]
 }
 ```
 
 WebPack also needs to be told to call Babel. The loader setting in each rule can take an array of loaders which are loader in reverse order. Replacing `loader: 'ts-loader'` with `loader: ['babel-loader', 'ts-loader']` makes WebPack run the TypeScript code through the TypeScript compiler and then the Babel compiler.
 
-After re-running the build the new `main.js` will be back to old style JavaScript:
+After re-running the build the new `main.js` will be very similar to the last version, but should allow for all ES2015 features:
 
 ```js
-var SimpleClass = exports.SimpleClass = function () {
-    function SimpleClass() {
-        _classCallCheck(this, SimpleClass);
+class SimpleClass {
+    Add(a, b) {
+        return a + b;
     }
-
-    _createClass(SimpleClass, [{
-        key: "Add",
-        value: function Add(a, b) {
+}
+exports.SimpleClass = SimpleClass;
+const simpleClass = new SimpleClass();
+console.log(simpleClass.Add(2, 3));
 ...
 ```
 
@@ -287,6 +287,8 @@ Having set up Babel for the second step in TypeScript build, need to also config
         loader: 'babel-loader'
       }
 ```
+
+If you also want to target browsers you could switch from `es2015-node` preset to the `es2015` preset. 
 
 ## Electron ##
 
@@ -479,6 +481,7 @@ By default, Jest will search for the test files within the `__tests__` folder or
 Finally, create the test directory structure and a couple of place holder tests. Note the top line in the sample code below, this adds the global variables that Jest declares into TypeScript so the compiler will be happy!
 
 *tests/host/host_tests.ts*
+
 ```js
 /// <reference types="jest" />
 describe('Host', () => {
@@ -490,6 +493,7 @@ describe('Host', () => {
 ```
 
 *tests/gui/gui_tests.ts*
+
 ```js
 /// <reference types="jest" />
 describe('GUI', () => {
@@ -508,12 +512,42 @@ It will also create a `TEST-jest_junit.xml` file. This is for reading with Visua
 
 ## Visual Studio Team Services ##
 
-- Setting up a build within VSTS
+Create a new project in Visual Studio Team Services and select build code from an external repository.
+
+![Build from another repository](assets/vstsBuildFromAnotherRepository.jpg)
+
+Select `New Defintion` and choose either of NodeJS scripts as a starting point. These are based on top of npm so it is easy to configure to build this project. I am sure you could make it use yarn but for simplicity have stuck with npm.
+
+First, reconfigure the Get Sources step to get the code from GitHub (you may need to allow pop ups for the authorization step). It's great how easy it is to integrate with external repositories now within VSTS.
+
+Next remove the Run gulp task. Add a new npm task after the npm install, with npm command of run and argument of test. This will build and run the Jest tests. It needs to continue even if it the tests fail so choose `Continue on error` within the Control Options section.
+
+![NPM Run Tests Settings](assets/vstsNPMRunTests.jpg)
+
+In order to make VSTS report the test results, add a new task to `Publish Test Results`. The default configuration of this task will pick up the JUnit format XML we have configured to be published in the npm test step.
+
+The last step is to run the actual WebPack build. So add another npm command. This time configured to run build.
+
+![VSTS Build Process](assets/vstsFinalBuild.jpg)
+
+Finally, switch on the triggers for Continous Integration and Pull Requests. That't is CI from GitHub into VSTS!
+
+![VSTS Build Running](assets/vstsBuildRunning.jpg)
+![VSTS Build Results](assets/vstsBuildResults.jpg)
 
 ## Future Improvemnts ##
 
-Currently, I don't have a good solution for watching tests. While watch mode works fine for `build` the `test` command set up doesn't support watching yet. I'll inevitably spend a fair chunk of time mucking around trying to get this bit set up as well but at present I accept just having to run the command!
+Since I started writing this Electron has updated with [support for TypeScript](https://electron.atom.io/blog/2017/06/01/typescript). This doesn't change much but does mean you don't need type definitions for electron and node. If you have followed these instructions all you need do is run:
 
-Primarily to keep this post a little shorter I haven't gone into much on writing the Electron or React side just looking at the build process.
+```js
+yarn upgrade electron -D
+yarn remove @types/electron @types/node -D
+``` 
+
+Currently, I don't have a good solution for watching tests. While watch mode works fine for `build` (run `yarn run build -- --watch`) the `test` command set up doesn't support watching yet. I'll inevitably spend a fair chunk of time mucking around trying to get this bit set up as well but at present I accept just having to run the command to run my tests.
+
+Primarily to keep this post shorter (well a little shorter), I haven't gone into much detail on writing the Electron or React side of an application, instead just looking at the build process.
+
+I haven't covered packaging or any of the other steps needed for Electron. Lots more I can add if people are interested.
 
 Hopefully as I experiment and learn more, I will write a few more posts on Electron as it is a platform I am growing to really like.
