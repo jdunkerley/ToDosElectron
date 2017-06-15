@@ -50,7 +50,7 @@ const commonConfig = {
   },
   node: {
     __dirname: false
-  }, 
+  },
   resolve: {
     extensions: ['.js', '.ts', '.tsx', '.jsx', '.json']
   }

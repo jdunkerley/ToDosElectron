@@ -46,5 +46,10 @@
     "classNameTemplate": "{classname}-{title}",
     "titleTemplate": "{classname}-{title}",
     "usePathForSuiteName": "true"
+  },
+  "standard": {
+    "ignore": [
+      "dist/"
+    ]
   }
 }

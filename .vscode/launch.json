@@ -1,0 +1,58 @@
+{
+  // Use IntelliSense to learn about possible Node.js debug attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Main Electron Process",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+      },
+      "runtimeArgs": [
+          "--enable-logging",
+          "--remote-debugging-port=9222"
+      ],
+      "cwd": "${workspaceRoot}",
+      "program": "${workspaceRoot}/dist/main.js",
+      "timeout": 20000,
+      "sourceMaps": true,
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug Renderer Process",
+      "type": "chrome",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+      },
+      "runtimeArgs": [
+          "${workspaceRoot}/dist/main.js",
+          "--enable-logging",
+          "--remote-debugging-port=9222"
+      ],
+      "timeout": 20000,
+      "sourceMaps": true,
+      "preLaunchTask": "build",
+      "webRoot": "${workspaceRoot}"
+    },
+    {
+      "name": "Attach to Main (Port 5858)",
+      "type": "node",
+      "request": "attach",
+      "port": 5858,
+      "sourceMaps": true
+    },
+    {
+      "name": "Attach to Renderer (Port 9222)",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "sourceMaps": false
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# Setting up Debugging for TypeScript Electron application
+# Setting up VS Code Debugging for TypeScript Electron application
 
 The [last post](https://jdunkerley.co.uk/2017/06/03/how-to-set-up-webpack-based-typescript-electron-react-build-process-with-vsts-ci/) covered the basic set up of TypeScript Electron application being build by WebPack. This post follows on with a couple of extra features.
 
@@ -47,7 +47,7 @@ Re-running the build again and in the `dist` file there should be:
 
 As the build has already been run there will also be `index.html` file. There is a plug in for WebPack which will clean out folders before building. Run
 
-```
+``` bash
 yarn add -D clean-webpack-plugin
 ```
 
@@ -68,7 +68,7 @@ to the top of the `webpack.config.js` and alter the `plugins` to be:
 
 (the new ... spread operator is fantastic!)
 
-The first setting on `CleanWebpackPlugin` tells it which folders to clean. The second is a set of options, in this case telling it to ignore the output of the parallel build process.
+The first setting on [`CleanWebpackPlugin`](https://github.com/johnagan/clean-webpack-plugin) tells it which folders to clean. The second is a set of options, in this case telling it to ignore the output of the parallel build process.
 
 ## Visual Studio Code Debugging
 
@@ -97,4 +97,110 @@ module.exports = [
 ]
 ```
 
+There are a few usueful extensions to add to working within Visual Studio Code easier:
+
+- `yarn`: integrates running yarn commands within Visual Studio Code.
+- `TSLint`: gives real time linting of TypeScript files within the editor.
+- `JavaScript Standard Style`: adds real time linting of JavaScript files following StandardJS rules.
+- `Debugger for Chrome`: gives a chrome debugging mode, needed for debugging the renderer.
+
+Electron has a couple of command line options which can be used to help debugging:
+
+- `--enable-logging`: Prints Chromium's log messages to the console.
+- `--debug=[port]`: enables NodeJS debugging of the main process.
+- `--debug-brk=[port]`: same as debug but breaks on the first line of the code.
+- `--remote-debugging-port=[port]`: enables a debugging port on the Chromium renderer.
+
+In order to enable debugging will next change the `start` command within the `packages.json` file to be:
+
+``` json
+"start": "electron dist/main.js --enable-logging --remote-debugging-port=9222 --debug-brk=5858"
+```
+
+Within Visual Studio Code press `F5` and drop down box should appear allowing configuration of the launch process. Choose `Node.js` to get a starting point.
+
+![Environment choices](assets/launchChoices.jpg)
+
+Replace the `configuration` section with:
+
+```json
+  "configurations": [
+    {
+      "name": "Debug Main Electron Process",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+      },
+      "runtimeArgs": [
+          "--enable-logging",
+          "--remote-debugging-port=9222"
+      ],
+      "cwd": "${workspaceRoot}",
+      "program": "${workspaceRoot}/dist/main.js",
+      "timeout": 20000,
+      "sourceMaps": true,
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug Renderer Process",
+      "type": "chrome",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+      },
+      "runtimeArgs": [
+          "${workspaceRoot}/dist/main.js",
+          "--enable-logging",
+          "--remote-debugging-port=9222"
+      ],
+      "timeout": 20000,
+      "sourceMaps": true,
+      "preLaunchTask": "build",
+      "webRoot": "${workspaceRoot}"
+    },
+    {
+      "name": "Attach to Main (Port 5858)",
+      "type": "node",
+      "request": "attach",
+      "port": 5858,
+      "sourceMaps": true
+    },
+    {
+      "name": "Attach to Renderer (Port 9222)",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "sourceMaps": false
+    }
+  ]
+```
+
+This will set up 4 different modes.
+
+- `Debug Main Electron Process`: Rebuilds the code and then runs electron and connects the debugger to the main process.
+- `Debug Renderer Process`: Rebuilds the code and connects a chrome debugger to the renderer process. **Requires the Chrome debugger extension.**
+- `Attach to Main`: Connects debugger to a running electron instance's main process on port 5858.
+- `Attach to Renderer`: Connects debugger to a running electron instance's renderer process on port 9222. **Requires the Chrome debugger extension.**
+
+I have found that break points within TypeScript don't work yet and have to place them within the generated JavaScript. Opening `dist/main.js` and adding a break point on the line where the filename is set. Press `F5` and it should open within the debugger:
+
+![Code in debugger](assets/debuggerBreak.jpg)
+
+The code displayed is in TypeScript and you can trade through the program with the debugging functions.
+
 ## Visual Studio Team Services Build Badge
+
+(Repeating the great instructions from [Thiago Almeida's blog post](http://www.talmeida.net/blog/2015/12/17/creating-a-badge-on-github-to-show-the-latest-visual-studio-team-service-build-status))
+
+One last little want is to show the status of the Visual Studio build within GitHub's ReadMe view. Go into Visual Studio Team Services and edit the build definition. Within the Options tab, there is a tick box to enable badges. Select it and save the build. There will then be a URL which you can add to show the state of the build.
+
+![Build Options](assets/buildOptions.jpg) 
+
+## What Next
+
+After a little bit more fiddling, the debug environment is now all set up. While I would love to find a solution to break points within the source TypeScript files this is a pretty good set up to work with.
+
+I haven't looked at packaging or release process but this is something for when there is actual content to release!

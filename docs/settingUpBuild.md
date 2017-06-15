@@ -288,7 +288,7 @@ Having set up Babel for the second step in TypeScript build, need to also config
       }
 ```
 
-If you also want to target browsers you could switch from `es2015-node` preset to the `es2015` preset. 
+If you also want to target browsers you could switch from `es2015-node` preset to the `es2015` preset.
 
 ## Electron ##
 

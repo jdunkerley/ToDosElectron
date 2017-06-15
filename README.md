@@ -1,5 +1,6 @@
 # Electron To Dos App
 
+![Build Status](https://jdunkerley.visualstudio.com/_apis/public/build/definitions/c5590d99-e9b6-4375-9cac-ba78a8898dbb/2/badge)
 
 An experiment in creating an Electron app in TypeScript to be a ToDos app!
 
