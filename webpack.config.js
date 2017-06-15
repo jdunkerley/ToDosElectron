@@ -1,4 +1,17 @@
 const path = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CleanWebpackPlugin = require('clean-webpack-plugin')
+const webpack = require('webpack')
+const fs = require('fs')
+
+const guiEntries =
+  fs.readdirSync('src')
+    .filter(f => f.match(/.*\.tsx$/))
+    .map(f => path.join('src', f))
+    .reduce((memo, file) => {
+      memo[path.basename(file, path.extname(file))] = path.resolve(file)
+      return memo
+    }, {})
 
 const commonConfig = {
   output: {
@@ -43,19 +56,23 @@ const commonConfig = {
   }
 }
 
-const HtmlWebpackPlugin = require('html-webpack-plugin')
 module.exports = [
   Object.assign(
     {
       target: 'electron-main',
-      entry: { main: './src/main.ts' }
+      entry: { main: './src/main.ts' },
+      plugins: [ new webpack.SourceMapDevToolPlugin({ filename: '[name].js.map' }) ]
     },
     commonConfig),
   Object.assign(
     {
       target: 'electron-renderer',
-      entry: { gui: './src/gui.tsx' },
-      plugins: [new HtmlWebpackPlugin()]
+      entry: guiEntries,
+      plugins: [
+        new CleanWebpackPlugin(['dist'], { exclude: ['main.js'] }),
+        new webpack.SourceMapDevToolPlugin({ filename: '[name].js.map' }),
+        ...Object.keys(guiEntries).map(k => new HtmlWebpackPlugin({ filename: `${k}.html`, chunks: [k] }))
+      ]
     },
     commonConfig)
 ]
