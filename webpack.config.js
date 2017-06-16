@@ -71,7 +71,7 @@ module.exports = [
       plugins: [
         new CleanWebpackPlugin(['dist'], { exclude: ['main.js'] }),
         new webpack.SourceMapDevToolPlugin({ filename: '[name].js.map' }),
-        ...Object.keys(guiEntries).map(k => new HtmlWebpackPlugin({ filename: `${k}.html`, chunks: [k] }))
+        ...Object.keys(guiEntries).map(k => new HtmlWebpackPlugin({ filename: `${k}.html`, chunks: [k], template: fs.existsSync(`src/${k}.ejs`) ? `src/${k}.ejs` : 'src/default.ejs' }))
       ]
     },
     commonConfig)
