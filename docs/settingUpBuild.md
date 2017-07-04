@@ -1,16 +1,16 @@
 # ReadMe #
 
-Having spent a few days experimenting with setting up a build process for creating an Electron-based thought I would put together a post describing the setup. First, a disclaimer that this is still a work in progress and as with everything within the JavaScript world it seems like there are a thousand ways to do it and this is just one way. Secondly, I am by no means an expert and this is just the process I wanted to create - I am sure there are improvements that can be made and would value suggestions!
+Having spent a few days experimenting with setting up a build process for creating an Electron-based application thought I would put together a post describing the setup. First, a disclaimer that this is still a work in progress and as with everything within the JavaScript world it seems like there are a thousand ways to do it and this is just one way. Secondly, I am by no means an expert and this is just the process I wanted to create - I am sure there are improvements that can be made and would value suggestions!
 
 So my requirements are:
 
 * Want to use [Electron](https://electron.atom.io/) for creating a simple (or not…) desktop application
 * Want to use [TypeScript](http://www.typescriptlang.org/) for the majority of the code
-* Where I have to use JavaScript code, want to have it linted by [standardjs](https://standardjs.com/)
+* Where I have to use JavaScript code, want to have it linted by [StandardJS](https://standardjs.com/)
 * Want the TypeScript code to be linted by [ts-lint](https://palantir.github.io/tslint/) but conforming to consistent rules with standardjs
 * Want to use [WebPack](https://webpack.js.org/) (version 2) to control the build process
 * Want to use [babel](https://babeljs.io/) to transpile from ES6 to ES5 as needed for node, and to compile the JSX
-* Want to [React](https://facebook.github.io/react/) and `tsx` on the front end
+* Want to use [React](https://facebook.github.io/react/) and `tsx` on the front end
 * Want to use the [Jest](https://facebook.github.io/jest/) unit testing framework
 * **Want to have one place to control how TypeScript / TSX is linted and built, one place to control how JavaScript / JSX is linted and build and one place to run all the tests!**
 
@@ -22,7 +22,7 @@ Additional development environment goals:
 
 The diagram below shows the end goal for the build process we are going to create.
 
-![Final Build Process](assets/buildprocess.jpg?raw=true)
+![Final Build Process](assets/buildprocess.jpg)
 
 This guide is probably a bit too long (feels like my longest post in a while!), so if you prefer you can just download the initial project from [github](https://github.com/jdunkerley/ToDosElectron).
 
@@ -30,7 +30,7 @@ This guide is probably a bit too long (feels like my longest post in a while!), 
 
 In this guide, I am using [yarn](https://yarnpkg.com/en/) but the same process will work with `npm` as well. Let's start by creating an empty project by running and completing the wizard:
 
-```js
+```none
 yarn init
 ```
 
@@ -38,19 +38,19 @@ Next, import all the packages we need for the build as development dependencies:
 
 *For compiling and linting TypeScript (WebPack, TSLint, TypeScript)*
 
-```js
+```none
 yarn add webpack tslint-config-standard tslint-loader ts-loader tslint typescript -D
 ```
 
 *For transpiling and linting ES2015 code for Node (Babel, Babel Presets, StandardJS)*
 
-```js
+```none
 yarn add babel-core babel-loader babel-preset-es2015-node babel-preset-react standard standard-loader -D
 ```
 
 ## Setting Up The Build Process ##
 
-In order to set this up, we need to set up a fair few pieces. Let's start by getting the TypeScript process set up to build a file from the `src` directory to the `dist` folder. To configure the TypeScript compile, add a new file called `tsconfig.json` to the root folder of the project with the following content:
+In order to set this up, we need to set up a fair few pieces. Let's start by getting the TypeScript process set up to build a file from the `src` directory to the `dist` folder. To configure the TypeScript compiler, add a new file called `tsconfig.json` to the root folder of the project with the following content:
 
 ```js
 {
@@ -78,22 +78,22 @@ This tells the TypeScript compiler not to compile on save (as we are going to us
 
 |Setting|Value|Description|
 |----|:---:|---|
-|target|es2015|Specify output ECMAScript version to be ES2015 (ES6)|
-|moduleResolution|node|Determine that modules get resolved consistently with Node.js system|
-|pretty|true|Stylise errors and messages with colour and context|
-|newLine|LF|Use Linux style line endings|
-|allowSyntheticDefaultImports|true|Allows for a nicer (in my opinion) syntax for importing defaults|
-|strict|true|Enables strict type checking|
-|noUnusedLocals|true|Report errors if local variable unused|
-|noUnusedParameters|true|Report errors if parameter unused|
-|sourceMap|true|Generate a corresponding .map file|
-|skipLibCheck|true|Skip type checking of all .d.ts files (type definition files)|
-|allowJs|true|Allow JavaScript files to be compiled|
-|jsx|preserve|Preserve means we produce a jsx file leaving the JSX mark up unchanged|
+|`target`|`es2015`|Specify output ECMAScript version to be ES2015 (ES6)|
+|`moduleResolution`|`node`|Determine that modules get resolved consistently with Node.js system|
+|`pretty`|`true`|Stylise errors and messages with colour and context|
+|`newLine`|`LF`|Use Linux style line endings|
+|`allowSyntheticDefaultImports`|`true`|Allows for a nicer (in my opinion) syntax for importing defaults|
+|`strict`|`true`|Enables strict type checking|
+|`noUnusedLocals`|`true`|Report errors if local variable unused|
+|`noUnusedParameters`|`true`|Report errors if parameter unused|
+|`sourceMap`|`true`|Generate a corresponding .map file|
+|`skipLibCheck`|`true`|Skip type checking of all .d.ts files (type definition files)|
+|`allowJs`|`true`|Allow JavaScript files to be compiled|
+|`jsx`|`preserve`|Preserve means we produce a JSX file leaving the JSX mark up unchanged|
 
 In order to set up tslint to be consistent with StandardJS, add another new file to the root directory called `tslint.json` with the following content:
 
-```js
+```json
 {
   "extends": "tslint-config-standard",
   "rules": {
@@ -108,7 +108,7 @@ In order to set up tslint to be consistent with StandardJS, add another new file
 }
 ```
 
-This makes tslint follow the same configuration as StandardJS. I found the whitespace settings were causing me some errors hence needing to add the additional configuration over `tslint-config-standard`.
+This makes tslint follow the same configuration as StandardJS. I found the white-space settings were causing me some errors hence needing to add the additional configuration over `tslint-config-standard`.
 
 Next, configure WebPack to compile TypeScript files (`ts` or `tsx` extensions) found in the `src` folder and output to the `dist` folder. The structure I use here is a little different from the standard as we will need two parallel configurations when we come to the Electron set up. Create a file called `webpack.config.js` and add the following:
 
@@ -153,7 +153,7 @@ The first rule tells WebPack to run tslint at the prebuild step, before then mov
 
 To add the build command to yarn or npm, add the following code to the `packages.json`. This is assuming you don't have `scripts` section already if you do merge it in.
 
-```js
+```json
   "scripts": {
     "build": "webpack --config webpack.config.js"
   },
@@ -163,11 +163,11 @@ To add the build command to yarn or npm, add the following code to the `packages
 
 In order to run this build from within Visual Studio Code, the next step is to configure the task and also set up the workspace environment appropriately.
 
-![Visual Studio Build Notifications](assets/vsCodeNotification.jpg?raw=true)
+![Visual Studio Build Notifications](assets/vsCodeNotification.jpg)
 
 Press `Ctrl-Shift-B` and then click `Configure Build Task`. Choose `npm` as a starting point, and then replace the default `tasks` array with:
 
-```js
+```json
     "tasks": [
         {
             "taskName": "build",
@@ -181,7 +181,7 @@ If using `yarn`, then change the command from `npm` to `yarn`.
 
 The last part of setting up the editor is to add a `settings.json` within the `.vscode` folder (which should have been created for the `tasks.json` file) specifying the number of spaces and line endings to match the linting settings:
 
-```js
+```json
 {
     "editor.tabSize": 2,
     "files.eol": "\n"
@@ -200,7 +200,7 @@ There are three ways to run the build (and all will do the same):
 
 As there is no code yet, running the build will just result in an error:
 
-![WebPack Build Output](assets/webPackError.png?raw=true)
+![WebPack Build Output](assets/webPackError.png)
 
 To test the build set up, create a `src` directory and add a `main.ts` file, with the following content (note the empty line at the end):
 
@@ -218,7 +218,7 @@ console.log(simpleClass.Add(2, 3))
 
 If all is working you should get output like:
 
-```bash
+```none
 ts-loader: Using typescript@2.3.3 and D:\Repos\ToDosElectron\tsconfig.json
 Hash: c35650ba72c226225609
 Version: webpack 2.6.1
@@ -248,7 +248,7 @@ console.log(simpleClass.Add(2, 3));
 
 The next goal is to use babel-js to convert from this to fully compatible JavaScript for Node. As of Babel 6, a `.babelrc` file is used to tell it what 'presets' to load. The following will tell it to understand both ES2015 and React, and to transpile down as needed for Node:
 
-```js
+```json
 {
   "presets": ["es2015-node", "react"]
 }
@@ -294,7 +294,7 @@ If you also want to target browsers you could switch from `es2015-node` preset t
 
 So far the process above doesn't have any settings to deal with Electron. Electron adds a few additional complications we need to deal with. The following command will add the core Electron package and the type definitions for Electron and Node. It also adds the HTML WebPack plugin which I will use to generate a placeholder `index.html` for the UI side of Electron.
 
-```js
+```none
 yarn add electron html-webpack-plugin @types/electron @types/node -D
 ```
 
@@ -369,7 +369,7 @@ document.getElementsByTagName('body')[0].innerHTML = `node Version: ${process.ve
 
 The last adjustment is to add a new task the `packages.json` file. The `prestart` entry makes it build it as well.
 
-```js
+```json
     "prestart": "yarn run build",
     "start": "electron ./dist/main.js",
 ```
@@ -382,7 +382,7 @@ If you run `yarn run start` hopefully an electron window will appear with the no
 
 In order to move to using TSX (or JSX), need to add React packages to the project:
 
-```js
+```none
 yarn add react react-dom
 yarn add @types/react @types/react-dom -D
 ```
@@ -407,7 +407,7 @@ The next piece to set up is a unit testing solution. Sticking with the rule that
 
 Again the first step is to add the additional packages:
 
-```js
+```none
 yarn add jest jest-junit @types/jest -D
 ```
 
@@ -453,7 +453,7 @@ module.exports = [
 
 ```
 
-The `getEntries` function is designed to search all folders within `tests/host` and `tests/gui` for TypeScript files with filenames ending either with `tests` or `specs`. This scan process limits the watch functionality of WebPack as it will only scan for files at start up. Files within `tests/host` will be built with the target setting of `electron-main` and `tests/gui` will be `electron-renderer`. The output will be built to a `__tests__` folder and as before will pass through tslint, tsc and babel to produce JavaScript files.
+The `getEntries` function is designed to search all folders within `tests/host` and `tests/gui` for TypeScript files with filenames ending either with `tests` or `specs`. This scan process limits the watch functionality of WebPack as it will only scan for files at start up. Files within `tests/host` will be built with the target setting of `electron-main` and `tests/gui` will be `electron-renderer`. The output will be built to a `__tests__` folder and as before will pass through tslint, `tsc` and babel to produce JavaScript files.
 
 To add the `test` command to `yarn`, add the following to `packages.json`. The `pretest` stage will build all the test files before running jest on the result.
 
@@ -462,9 +462,9 @@ To add the `test` command to `yarn`, add the following to `packages.json`. The `
     "test": "jest"
 ```
 
-By default, Jest will search for the test files within the `__tests__` folder or any JavaScript file with a filename ending either spec or test. Adding the configuration below (to `package.json`) limits Jests to just reading the `__tests__` folder. The second part configures jest-junit to write out an XML file containing the test results - this is for Visual Studio Team Services to be able to read the results.
+By default, Jest will search for the test files within the `__tests__` folder or any JavaScript file with a filename ending either spec or test. Adding the configuration below (to `package.json`) limits Jests to just reading the `__tests__` folder. The second part configures `jest-junit` to write out an XML file containing the test results - this is for Visual Studio Team Services to be able to read the results.
 
-```js
+```json
   "jest": {
     "testRegex": "/__tests__/.*\\.jsx?",
     "testResultsProcessor": "./node_modules/jest-junit"
@@ -480,7 +480,7 @@ By default, Jest will search for the test files within the `__tests__` folder or
 
 Finally, create the test directory structure and a couple of placeholder tests. Note the top line in the sample code below, this adds the global variables that Jest declares into TypeScript so the compiler will be happy!
 
-*tests/host/host_tests.ts*
+*`tests/host/host_tests.ts`*
 
 ```js
 /// <reference types="jest" />
@@ -492,7 +492,7 @@ describe('Host', () => {
 
 ```
 
-*tests/gui/gui_tests.ts*
+*`tests/gui/gui_tests.ts`*
 
 ```js
 /// <reference types="jest" />
@@ -530,7 +530,7 @@ The last step is to run the actual WebPack build. So add another npm command. Th
 
 ![VSTS Build Process](assets/vstsFinalBuild.jpg)
 
-Finally, switch on the triggers for Continous Integration and Pull Requests. That is it - a CI process from GitHub into VSTS!
+Finally, switch on the triggers for Continuous Integration and Pull Requests. That is it - a CI process from GitHub into VSTS!
 
 ![VSTS Build Running](assets/vstsBuildRunning.jpg)
 ![VSTS Build Results](assets/vstsBuildResults.jpg)
@@ -539,7 +539,7 @@ Finally, switch on the triggers for Continous Integration and Pull Requests. Tha
 
 Since I started writing this Electron has updated with [support for TypeScript](https://electron.atom.io/blog/2017/06/01/typescript). This doesn't change much but does mean you don't need type definitions for electron and node. If you have followed these instructions all you need do is run:
 
-```js
+```none
 yarn upgrade electron -D
 yarn remove @types/electron @types/node -D
 ``` 
